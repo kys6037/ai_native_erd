@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
-import type { ErdData, ErdTable, ColumnMetadata, ErdRelationship } from '../types/erd'
+import type { ErdData, ErdTable, ColumnMetadata, ErdRelationship, IndexMetadata } from '../types/erd'
 
 const MAX_HISTORY = 50
 
@@ -33,6 +33,8 @@ interface ErdState {
   removeRelationship: (relId: string) => void
 
   autoLayout: () => void
+  loadFromVersion: (erdData: ErdData) => void
+  updateTableIndexes: (tableId: string, indexes: IndexMetadata[]) => void
 }
 
 function emptyErd(): ErdData {
@@ -227,6 +229,23 @@ const useErdStore = create<ErdState>((set, get) => ({
       present: {
         ...present,
         relationships: present.relationships.filter((r) => r.id !== relId),
+      },
+      future: [],
+      isDirty: true,
+    })
+  },
+
+  loadFromVersion: (erdData) => {
+    set({ present: erdData, past: [], future: [], isDirty: true })
+  },
+
+  updateTableIndexes: (tableId, indexes) => {
+    const { present, past } = get()
+    set({
+      past: pushHistory(past, present),
+      present: {
+        ...present,
+        tables: present.tables.map((t) => (t.id === tableId ? { ...t, indexes } : t)),
       },
       future: [],
       isDirty: true,

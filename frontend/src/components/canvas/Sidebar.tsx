@@ -1,5 +1,6 @@
 import type { ErdTable, ColumnMetadata, ForeignKeyRef } from '../../types/erd'
 import useErdStore from '../../stores/erdStore'
+import IndexesPanel from '../IndexesPanel'
 
 interface Props {
   table: ErdTable | null
@@ -133,6 +134,11 @@ export default function Sidebar({ table, onClose }: Props) {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Indexes */}
+        <div>
+          <IndexesPanel table={table} />
         </div>
       </div>
 

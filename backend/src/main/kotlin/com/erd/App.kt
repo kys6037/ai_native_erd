@@ -1,7 +1,13 @@
 package com.erd
 
+import com.erd.api.CollaborationHandler
 import com.erd.api.registerAuthRoutes
+import com.erd.api.registerConnectionRoutes
+import com.erd.api.registerDdlRoutes
+import com.erd.api.registerDictionaryRoutes
+import com.erd.api.registerMigrationRoutes
 import com.erd.api.registerProjectRoutes
+import com.erd.api.registerVersionRoutes
 import com.erd.config.Auth
 import com.erd.config.Database
 import com.erd.exception.BadRequestException
@@ -10,8 +16,11 @@ import com.erd.exception.NotFoundException
 import com.erd.exception.UnauthorizedException
 import com.erd.middleware.AuthMiddleware
 import com.erd.model.ErrorResponse
+import com.erd.repository.ConnectionRepository
+import com.erd.repository.DictionaryRepository
 import com.erd.repository.ProjectRepository
 import com.erd.repository.UserRepository
+import com.erd.repository.VersionRepository
 import com.erd.service.AuthService
 import com.erd.service.ProjectService
 import com.fasterxml.jackson.databind.DeserializationFeature
@@ -42,6 +51,9 @@ fun main() {
     val authService = AuthService(userRepo)
     val projectRepo = ProjectRepository(mapper)
     val projectService = ProjectService(projectRepo)
+    val connectionRepo = ConnectionRepository()
+    val versionRepo = VersionRepository(mapper)
+    val dictionaryRepo = DictionaryRepository()
 
     val app = Javalin.create { config ->
         config.jsonMapper(JavalinJackson(mapper))
@@ -65,6 +77,16 @@ fun main() {
     // Routes
     registerAuthRoutes(app, authService)
     registerProjectRoutes(app, projectService)
+    registerDdlRoutes(app)
+    registerConnectionRoutes(app, connectionRepo)
+    registerVersionRoutes(app, versionRepo, projectRepo)
+    registerMigrationRoutes(app, versionRepo, projectRepo)
+    registerDictionaryRoutes(app, dictionaryRepo, projectRepo)
+
+    // WebSocket collaboration
+    app.ws("/ws/collab/{projectId}") { ws ->
+        CollaborationHandler.configure(ws, projectRepo)
+    }
 
     // SPA fallback — serve index.html for non-API routes
     app.get("/*") { ctx ->

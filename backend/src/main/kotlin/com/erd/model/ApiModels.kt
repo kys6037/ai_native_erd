@@ -62,3 +62,33 @@ data class ProjectResponse(
 
 fun Project.toResponse() = ProjectResponse(id, userId, name, description, erdData, createdAt, updatedAt)
 fun Project.toSummary() = ProjectSummaryResponse(id, userId, name, description, createdAt, updatedAt)
+
+// DDL DTOs
+data class GenerateDdlRequest(val erdData: ErdData, val dialect: String)
+data class GenerateDdlResponse(val sql: String)
+data class ParseDdlRequest(val sql: String, val dialect: String = "mysql")
+data class ParseDdlResponse(val erdData: ErdData, val warnings: List<String>)
+
+// DbConnection DTOs
+data class DbConnectionRequest(
+    val name: String,
+    val type: String,
+    val host: String?,
+    val port: Int?,
+    val database: String?,
+    val username: String?,
+    val password: String?,
+    val ssl: Boolean = false
+)
+
+data class DbConnectionResponse(
+    val id: Int,
+    val name: String,
+    val type: String,
+    val host: String?,
+    val port: Int?,
+    val database: String?,
+    val username: String?,
+    val password: String? = null,
+    val ssl: Boolean
+)
