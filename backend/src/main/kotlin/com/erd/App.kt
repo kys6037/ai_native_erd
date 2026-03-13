@@ -122,6 +122,6 @@ fun main() {
         ctx.status(500).json(ErrorResponse("Internal server error"))
     }
 
-    app.start(port)
+    app.start("0.0.0.0", port)
     log.info("ERD server started on port $port")
 }
