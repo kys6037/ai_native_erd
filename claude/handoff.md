@@ -74,6 +74,7 @@ curl -sk -X POST https://ai-native-erd.fly.dev/api/auth/login \
 # → 401 (앱 정상 응답)
 ```
 
-### 다음 단계
-- [ ] Vercel 프론트엔드 배포 (vercel.json 준비 완료)
-- [ ] VITE_API_URL 환경변수를 Fly.io URL로 설정
+### Vercel 프론트엔드
+- URL: https://ainativeerd.vercel.app
+- 빌드: `cd frontend && npm install && npm run build`
+- 환경변수: `VITE_API_BASE_URL=https://ai-native-erd.fly.dev` (build-time)
