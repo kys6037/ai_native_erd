@@ -1,0 +1,8 @@
+{
+  "model": "opusplan",
+  "permissions": {
+    "allow": [
+      "Bash(*)"
+    ]
+  }
+}
