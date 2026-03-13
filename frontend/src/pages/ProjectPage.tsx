@@ -53,7 +53,7 @@ export default function ProjectPage() {
     projectId,
     token,
     (remoteData: ErdData) => {
-      loadFromVersion(remoteData)
+      loadFromVersion(remoteData, false)
     }
   )
 

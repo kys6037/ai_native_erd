@@ -69,8 +69,9 @@ export function useCollaboration(
       }
     })
 
-    // Yjs → ERD state
-    const updateFromYjs = () => {
+    // Yjs → ERD state (remote updates only)
+    const updateFromYjs = (_event: unknown, transaction: Y.Transaction) => {
+      if (transaction.origin === 'local') return
       const tables = [...yTables.values()] as ErdData['tables']
       const relationships = [...yRelationships.values()] as ErdData['relationships']
       if (tables.length > 0 || relationships.length > 0) {

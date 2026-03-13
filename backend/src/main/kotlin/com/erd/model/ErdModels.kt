@@ -19,6 +19,7 @@ data class ColumnMetadata(
     val nullable: Boolean = true,
     val primaryKey: Boolean = false,
     val autoIncrement: Boolean = false,
+    val unique: Boolean? = null,
     val defaultValue: String? = null,
     val comment: String? = null,
     val foreignKey: ForeignKeyRef? = null

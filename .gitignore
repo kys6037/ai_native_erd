@@ -28,4 +28,6 @@ logs/
 
 # DB
 *.db
+*.db-shm
+*.db-wal
 *.sqlite

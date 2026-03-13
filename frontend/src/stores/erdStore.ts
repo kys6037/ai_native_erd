@@ -33,7 +33,7 @@ interface ErdState {
   removeRelationship: (relId: string) => void
 
   autoLayout: () => void
-  loadFromVersion: (erdData: ErdData) => void
+  loadFromVersion: (erdData: ErdData, dirty?: boolean) => void
   updateTableIndexes: (tableId: string, indexes: IndexMetadata[]) => void
 }
 
@@ -235,8 +235,8 @@ const useErdStore = create<ErdState>((set, get) => ({
     })
   },
 
-  loadFromVersion: (erdData) => {
-    set({ present: erdData, past: [], future: [], isDirty: true })
+  loadFromVersion: (erdData, dirty = true) => {
+    set({ present: erdData, past: [], future: [], isDirty: dirty })
   },
 
   updateTableIndexes: (tableId, indexes) => {

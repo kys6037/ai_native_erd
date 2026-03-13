@@ -86,6 +86,10 @@ abstract class BaseDdlGenerator : DdlGenerator {
             sb.append(" NOT NULL")
         }
 
+        if (col.unique == true && !col.primaryKey) {
+            sb.append(" UNIQUE")
+        }
+
         if (col.defaultValue != null) {
             sb.append(" DEFAULT '${col.defaultValue}'")
         }
@@ -94,6 +98,7 @@ abstract class BaseDdlGenerator : DdlGenerator {
     }
 
     private fun buildAddForeignKey(sourceTable: ErdTable, targetTable: ErdTable, rel: ErdRelationship): String {
+        // Convention: sourceTable = child (FK side), targetTable = parent (referenced side)
         val constraintName = rel.constraintName
             ?: "fk_${sourceTable.name}_${rel.sourceColumnName}"
         return "ALTER TABLE ${quote(sourceTable.name)} " +

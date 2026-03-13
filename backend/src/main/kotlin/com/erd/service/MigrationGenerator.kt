@@ -16,6 +16,7 @@ object MigrationGenerator {
         val toTableById = to.tables.associateBy { it.id }
 
         for (rel in diff.removedRelationships) {
+            // FK is on sourceTable (child side)
             val srcTable = fromTableById[rel.sourceTableId] ?: continue
             val constraintName = rel.constraintName ?: "fk_${srcTable.name}_${rel.sourceColumnName}"
             parts.add("ALTER TABLE ${generator.quote(srcTable.name)} DROP FOREIGN KEY ${generator.quote(constraintName)};")
@@ -61,6 +62,7 @@ object MigrationGenerator {
 
         // Step 5: ADD FK constraints (addedRelationships + tables that were added)
         for (rel in diff.addedRelationships) {
+            // FK is on sourceTable (child side), references targetTable (parent side)
             val srcTable = toTableById[rel.sourceTableId] ?: continue
             val tgtTable = toTableById[rel.targetTableId] ?: continue
             val constraintName = rel.constraintName ?: "fk_${srcTable.name}_${rel.sourceColumnName}"
