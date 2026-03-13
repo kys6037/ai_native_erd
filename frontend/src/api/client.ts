@@ -1,8 +1,10 @@
 import axios from 'axios'
 
-const client = axios.create({
-  baseURL: '/api',
-})
+const baseURL = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}/api`
+  : '/api'
+
+const client = axios.create({ baseURL })
 
 client.interceptors.request.use((config) => {
   const raw = localStorage.getItem('auth-storage')

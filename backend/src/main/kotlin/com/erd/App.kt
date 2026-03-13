@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory
 
 private val log = LoggerFactory.getLogger("com.erd.App")
 
+object App
+
 fun main() {
     val jwtSecret = System.getenv("JWT_SECRET") ?: "dev-secret-change-in-production-min32chars"
     val dbPath = System.getenv("DB_PATH") ?: "./erd.db"
@@ -55,9 +57,12 @@ fun main() {
     val versionRepo = VersionRepository(mapper)
     val dictionaryRepo = DictionaryRepository()
 
+    val hasFrontend = App::class.java.getResource("/public/index.html") != null
     val app = Javalin.create { config ->
         config.jsonMapper(JavalinJackson(mapper))
-        config.staticFiles.add("/public")
+        if (hasFrontend) {
+            config.staticFiles.add("/public")
+        }
         config.bundledPlugins.enableCors { cors ->
             cors.addRule { rule ->
                 rule.anyHost()
@@ -90,7 +95,7 @@ fun main() {
 
     // SPA fallback — serve index.html for non-API routes
     app.get("/*") { ctx ->
-        if (!ctx.path().startsWith("/api")) {
+        if (!ctx.path().startsWith("/api") && hasFrontend) {
             ctx.result(
                 Javalin::class.java.getResourceAsStream("/public/index.html")
                     ?: return@get

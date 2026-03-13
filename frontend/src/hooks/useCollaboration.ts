@@ -31,8 +31,11 @@ export function useCollaboration(
     const yTables = ydoc.getMap('tables')
     const yRelationships = ydoc.getMap('relationships')
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/collab/${projectId}`)
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || ''
+    const wsUrl = backendUrl
+      ? `${backendUrl.replace(/^http/, 'ws')}/ws/collab/${projectId}`
+      : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/collab/${projectId}`
+    const ws = new WebSocket(wsUrl)
     ws.binaryType = 'arraybuffer'
     wsRef.current = ws
 
