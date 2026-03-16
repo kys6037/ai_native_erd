@@ -7,5 +7,6 @@ data class Project(
     val description: String?,
     val erdData: ErdData,
     val createdAt: String,
-    val updatedAt: String
+    val updatedAt: String,
+    val inviteToken: String? = null
 )

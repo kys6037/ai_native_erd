@@ -57,6 +57,7 @@ export interface ProjectSummary {
   description: string
   createdAt: string
   updatedAt: string
+  isOwner: boolean
 }
 
 export interface Project {

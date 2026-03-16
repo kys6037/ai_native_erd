@@ -47,7 +47,8 @@ data class ProjectSummaryResponse(
     val name: String,
     val description: String?,
     val createdAt: String,
-    val updatedAt: String
+    val updatedAt: String,
+    val isOwner: Boolean = true
 )
 
 data class ProjectResponse(
@@ -57,11 +58,15 @@ data class ProjectResponse(
     val description: String?,
     val erdData: ErdData,
     val createdAt: String,
-    val updatedAt: String
+    val updatedAt: String,
+    val inviteToken: String? = null
 )
 
-fun Project.toResponse() = ProjectResponse(id, userId, name, description, erdData, createdAt, updatedAt)
-fun Project.toSummary() = ProjectSummaryResponse(id, userId, name, description, createdAt, updatedAt)
+data class InviteTokenResponse(val inviteToken: String, val inviteUrl: String)
+data class JoinProjectResponse(val projectId: Int, val name: String)
+
+fun Project.toResponse() = ProjectResponse(id, userId, name, description, erdData, createdAt, updatedAt, inviteToken)
+fun Project.toSummary(requestUserId: Int) = ProjectSummaryResponse(id, userId, name, description, createdAt, updatedAt, isOwner = userId == requestUserId)
 
 // DDL DTOs
 data class GenerateDdlRequest(val erdData: ErdData, val dialect: String)

@@ -59,6 +59,17 @@ CREATE TABLE IF NOT EXISTS dictionary (
     UNIQUE(project_id, table_name, column_name)
 );
 
+CREATE TABLE IF NOT EXISTS project_members (
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    joined_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (project_id, user_id)
+);
+
+ALTER TABLE projects ADD COLUMN invite_token TEXT;
+
 CREATE INDEX IF NOT EXISTS idx_projects_user ON projects(user_id);
 CREATE INDEX IF NOT EXISTS idx_versions_project ON versions(project_id);
 CREATE INDEX IF NOT EXISTS idx_dictionary_project ON dictionary(project_id);
+CREATE INDEX IF NOT EXISTS idx_members_project ON project_members(project_id);
+CREATE INDEX IF NOT EXISTS idx_members_user ON project_members(user_id);

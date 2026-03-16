@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ProjectPage from './pages/ProjectPage'
+import JoinPage from './pages/JoinPage'
 
 function App() {
   const theme = useThemeStore((s) => s.theme)
@@ -38,6 +39,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/join/:token" element={<JoinPage />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )

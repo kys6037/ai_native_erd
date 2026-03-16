@@ -73,13 +73,22 @@ export default function DashboardPage() {
               className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between">
-                <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{project.name}</h3>
-                <button
-                  onClick={(e) => handleDelete(e, project.id)}
-                  className="text-gray-400 hover:text-red-500 text-xs ml-2 shrink-0"
-                >
-                  Delete
-                </button>
+                <div className="flex items-center gap-2 min-w-0">
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">{project.name}</h3>
+                  {!project.isOwner && (
+                    <span className="text-xs px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 rounded shrink-0">
+                      공유됨
+                    </span>
+                  )}
+                </div>
+                {project.isOwner && (
+                  <button
+                    onClick={(e) => handleDelete(e, project.id)}
+                    className="text-gray-400 hover:text-red-500 text-xs ml-2 shrink-0"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
               {project.description && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{project.description}</p>

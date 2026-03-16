@@ -24,3 +24,13 @@ export async function updateProject(id: number, name: string, description: strin
 export async function deleteProject(id: number): Promise<void> {
   await client.delete(`/projects/${id}`)
 }
+
+export async function generateInviteLink(id: number): Promise<{ inviteToken: string; inviteUrl: string }> {
+  const res = await client.post(`/projects/${id}/invite`)
+  return res.data
+}
+
+export async function joinProject(token: string): Promise<{ projectId: number; name: string }> {
+  const res = await client.post(`/projects/join/${token}`)
+  return res.data
+}

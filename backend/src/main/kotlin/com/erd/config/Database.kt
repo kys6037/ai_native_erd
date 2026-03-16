@@ -34,7 +34,9 @@ object Database {
                 sql.split(";")
                     .map { it.trim() }
                     .filter { it.isNotEmpty() }
-                    .forEach { stmt.execute(it) }
+                    .forEach { s ->
+                        try { stmt.execute(s) } catch (_: Exception) { /* idempotent: ignore duplicate column/table */ }
+                    }
             }
         }
     }

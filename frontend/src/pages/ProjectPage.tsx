@@ -11,6 +11,7 @@ import ExportModal from '../components/ExportModal'
 import VersionModal from '../components/VersionModal'
 import DictionaryModal from '../components/DictionaryModal'
 import SearchModal from '../components/SearchModal'
+import InviteModal from '../components/InviteModal'
 import { useCollaboration } from '../hooks/useCollaboration'
 import type { ErdData, ErdTable } from '../types/erd'
 
@@ -47,6 +48,7 @@ export default function ProjectPage() {
   const [showVersions, setShowVersions] = useState(false)
   const [showDictionary, setShowDictionary] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
 
   // Collaboration
   const { connected, users, syncToYjs } = useCollaboration(
@@ -178,6 +180,12 @@ export default function ProjectPage() {
           🔍 검색
           <kbd className="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-1 rounded text-xs">⌘K</kbd>
         </button>
+        <button
+          onClick={() => setShowInvite(true)}
+          className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-md px-3 py-1 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+        >
+          🔗 초대
+        </button>
       </div>
 
       <Toolbar
@@ -221,6 +229,10 @@ export default function ProjectPage() {
       </div>
 
       {/* Modals */}
+      {showInvite && projectId && (
+        <InviteModal projectId={projectId} onClose={() => setShowInvite(false)} />
+      )}
+
       {showSearch && (
         <SearchModal
           tables={present.tables}
