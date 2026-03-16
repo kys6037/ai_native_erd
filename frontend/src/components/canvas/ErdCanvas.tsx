@@ -182,8 +182,17 @@ export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: P
         <MiniMap
           pannable
           zoomable
-          nodeStrokeWidth={2}
-          style={{ border: '1px solid #e5e7eb' }}
+          nodeColor={(node) => (node.data as { color?: string }).color || '#6366f1'}
+          nodeStrokeColor="transparent"
+          nodeStrokeWidth={0}
+          maskColor="rgba(0,0,0,0.08)"
+          style={{
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: 8,
+            width: 200,
+            height: 140,
+          }}
         />
       </ReactFlow>
     </div>
