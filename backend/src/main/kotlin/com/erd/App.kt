@@ -90,7 +90,7 @@ fun main() {
 
     // WebSocket collaboration
     app.ws("/ws/collab/{projectId}") { ws ->
-        CollaborationHandler.configure(ws, projectRepo)
+        CollaborationHandler.configure(ws, projectRepo, userRepo)
     }
 
     // SPA fallback — serve index.html for non-API routes

@@ -2,6 +2,7 @@ package com.erd.api
 
 import com.erd.config.Auth
 import com.erd.repository.ProjectRepository
+import com.erd.repository.UserRepository
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.javalin.websocket.WsConfig
 import io.javalin.websocket.WsContext
@@ -26,7 +27,7 @@ object CollaborationHandler {
     private val yjsState = ConcurrentHashMap<Int, ByteArray>()
     private val sessions = ConcurrentHashMap<String, WsSession>()
 
-    fun configure(ws: WsConfig, projectRepo: ProjectRepository) {
+    fun configure(ws: WsConfig, projectRepo: ProjectRepository, userRepo: UserRepository) {
         ws.onConnect { ctx ->
             val sessionId = ctx.sessionId()
             val session = WsSession(ctx = ctx)
@@ -70,7 +71,9 @@ object CollaborationHandler {
                             return@onMessage
                         }
 
+                        val userName = userRepo.findById(userId)?.name ?: "User$userId"
                         session.userId = userId
+                        session.userName = userName
                         session.projectId = projectId
                         session.authenticated = true
 
@@ -92,7 +95,7 @@ object CollaborationHandler {
 
                         // Broadcast user_joined to room (excluding sender)
                         broadcastToRoom(projectId, session, wsMapper.writeValueAsString(
-                            mapOf("type" to "user_joined", "userId" to userId)
+                            mapOf("type" to "user_joined", "userId" to userId, "userName" to userName)
                         ))
 
                         log.debug("WS auth ok: userId=$userId projectId=$projectId")

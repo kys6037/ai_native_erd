@@ -21,7 +21,8 @@ interface Props {
   users: CollabUser[]
 }
 
-function userInitials(name: string): string {
+function userInitials(name: string | undefined): string {
+  if (!name) return '?'
   return name
     .split(/\s+/)
     .slice(0, 2)

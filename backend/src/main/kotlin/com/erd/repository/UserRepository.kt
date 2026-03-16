@@ -5,6 +5,25 @@ import com.erd.model.User
 
 class UserRepository {
 
+    fun findById(id: Int): User? {
+        Database.getConnection().use { conn ->
+            conn.prepareStatement(
+                "SELECT id, email, password, name, created_at FROM users WHERE id = ?"
+            ).use { stmt ->
+                stmt.setInt(1, id)
+                val rs = stmt.executeQuery()
+                if (!rs.next()) return null
+                return User(
+                    id = rs.getInt("id"),
+                    email = rs.getString("email"),
+                    password = rs.getString("password"),
+                    name = rs.getString("name"),
+                    createdAt = rs.getString("created_at")
+                )
+            }
+        }
+    }
+
     fun findByEmail(email: String): User? {
         Database.getConnection().use { conn ->
             conn.prepareStatement(
