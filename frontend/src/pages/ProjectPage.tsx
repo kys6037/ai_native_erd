@@ -165,26 +165,38 @@ export default function ProjectPage() {
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="flex items-center gap-4 px-4 py-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center gap-3 px-4 h-10 bg-white dark:bg-[#161b22] border-b border-slate-200 dark:border-[#30363d] shrink-0">
         <button
           onClick={() => navigate('/dashboard')}
-          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
         >
-          ← Dashboard
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M7.5 2L3 6l4.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Dashboard
         </button>
-        <h1 className="text-sm font-semibold text-gray-900 dark:text-white">{projectName}</h1>
+        <div className="w-px h-3.5 bg-slate-200 dark:bg-[#30363d]" />
+        <h1 className="text-xs font-semibold text-slate-700 dark:text-slate-300">{projectName}</h1>
+        <div className="flex-1" />
         <button
           onClick={() => setShowSearch(true)}
-          className="ml-auto flex items-center gap-2 text-xs text-gray-400 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-1 hover:bg-gray-50 dark:hover:bg-gray-700"
+          className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-[#30363d] rounded px-2.5 py-1 hover:bg-slate-50 dark:hover:bg-[#21262d] transition-colors"
         >
-          🔍 검색
-          <kbd className="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-1 rounded text-xs">⌘K</kbd>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <circle cx="5" cy="5" r="3.5" stroke="currentColor" strokeWidth="1.2"/>
+            <path d="M8 8l2.5 2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+          </svg>
+          Search
+          <kbd className="bg-slate-100 dark:bg-[#21262d] text-slate-400 dark:text-slate-500 px-1 rounded text-[10px] font-mono ml-0.5">⌘K</kbd>
         </button>
         <button
           onClick={() => setShowInvite(true)}
-          className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-md px-3 py-1 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+          className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/50 rounded px-2.5 py-1 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
         >
-          🔗 초대
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <path d="M8 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM1 10c0-2.2 1.8-4 4-4M10 8v3M8.5 9.5h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+          </svg>
+          Invite
         </button>
       </div>
 

@@ -31,11 +31,11 @@ function userInitials(name: string | undefined): string {
 }
 
 const AVATAR_COLORS = [
-  'bg-purple-500',
+  'bg-violet-500',
   'bg-pink-500',
-  'bg-orange-500',
+  'bg-amber-500',
   'bg-teal-500',
-  'bg-cyan-500',
+  'bg-sky-500',
 ]
 
 export default function Toolbar({
@@ -56,61 +56,72 @@ export default function Toolbar({
   users,
 }: Props) {
   return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-[#161b22] border-b border-slate-200 dark:border-[#30363d] h-11">
       <button
         onClick={onAddTable}
-        className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
       >
-        + Table
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M5 1v8M1 5h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+        Table
       </button>
-      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600" />
+
+      <div className="w-px h-4 bg-slate-200 dark:bg-[#30363d] mx-1" />
+
       <button
         onClick={onUndo}
         disabled={!canUndo}
         title="Undo (Ctrl+Z)"
-        className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-40"
+        className="px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-400 rounded-md hover:bg-slate-100 dark:hover:bg-[#21262d] disabled:opacity-30 transition-colors"
       >
-        ↩ Undo
+        Undo
       </button>
       <button
         onClick={onRedo}
         disabled={!canRedo}
         title="Redo (Ctrl+Y)"
-        className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-40"
+        className="px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-400 rounded-md hover:bg-slate-100 dark:hover:bg-[#21262d] disabled:opacity-30 transition-colors"
       >
-        ↪ Redo
+        Redo
       </button>
-      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600" />
+
+      <div className="w-px h-4 bg-slate-200 dark:bg-[#30363d] mx-1" />
+
       <button
         onClick={onAutoLayout}
         title="Auto-layout (Ctrl+A)"
-        className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+        className="px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-400 rounded-md hover:bg-slate-100 dark:hover:bg-[#21262d] transition-colors"
       >
-        Auto-layout
+        Auto Layout
       </button>
-      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600" />
+
+      <div className="w-px h-4 bg-slate-200 dark:bg-[#30363d] mx-1" />
+
       <button
         onClick={onImport}
-        className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+        className="px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-400 rounded-md hover:bg-slate-100 dark:hover:bg-[#21262d] transition-colors"
       >
         Import
       </button>
       <button
         onClick={onExport}
-        className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+        className="px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-400 rounded-md hover:bg-slate-100 dark:hover:bg-[#21262d] transition-colors"
       >
         Export
       </button>
-      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600" />
+
+      <div className="w-px h-4 bg-slate-200 dark:bg-[#30363d] mx-1" />
+
       <button
         onClick={onVersions}
-        className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+        className="px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-400 rounded-md hover:bg-slate-100 dark:hover:bg-[#21262d] transition-colors"
       >
-        Versions
+        History
       </button>
       <button
         onClick={onDictionary}
-        className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+        className="px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-400 rounded-md hover:bg-slate-100 dark:hover:bg-[#21262d] transition-colors"
       >
         Dictionary
       </button>
@@ -118,24 +129,29 @@ export default function Toolbar({
       <div className="flex-1" />
 
       {/* Collaboration status */}
-      <div className="flex items-center gap-2">
-        <span
-          className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-gray-400'}`}
-          title={connected ? 'Collaboration connected' : 'Not connected'}
-        />
+      <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+            title={connected ? 'Connected' : 'Disconnected'}
+          />
+          <span className="text-[11px] text-slate-400 dark:text-slate-500">
+            {connected ? 'Live' : 'Offline'}
+          </span>
+        </div>
         {users.length > 0 && (
-          <div className="flex -space-x-1">
+          <div className="flex -space-x-1.5">
             {users.slice(0, 5).map((u, i) => (
               <div
                 key={u.userId}
                 title={u.userName}
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ring-2 ring-white dark:ring-gray-800 ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold ring-2 ring-white dark:ring-[#161b22] ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}
               >
                 {userInitials(u.userName)}
               </div>
             ))}
             {users.length > 5 && (
-              <div className="w-6 h-6 rounded-full flex items-center justify-center bg-gray-400 text-white text-xs font-medium ring-2 ring-white dark:ring-gray-800">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-400 dark:bg-slate-600 text-white text-[10px] font-medium ring-2 ring-white dark:ring-[#161b22]">
                 +{users.length - 5}
               </div>
             )}
@@ -143,13 +159,16 @@ export default function Toolbar({
         )}
       </div>
 
+      <div className="w-px h-4 bg-slate-200 dark:bg-[#30363d] mx-1" />
+
       <button
         onClick={onSave}
         disabled={!isDirty || isSaving}
         title="Save (Ctrl+S)"
-        className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-40"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-md hover:bg-slate-700 dark:hover:bg-white disabled:opacity-30 transition-colors"
       >
-        {isSaving ? 'Saving…' : isDirty ? 'Save*' : 'Saved'}
+        {isSaving ? 'Saving...' : isDirty ? 'Save' : 'Saved'}
+        {isDirty && !isSaving && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />}
       </button>
     </div>
   )
