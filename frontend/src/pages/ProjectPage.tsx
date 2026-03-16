@@ -51,7 +51,7 @@ export default function ProjectPage() {
   const [showInvite, setShowInvite] = useState(false)
 
   // Collaboration
-  const { connected, users, syncToYjs } = useCollaboration(
+  const { connected, users, tableFocuses, syncToYjs, focusTable } = useCollaboration(
     projectId,
     token,
     (remoteData: ErdData) => {
@@ -207,7 +207,11 @@ export default function ProjectPage() {
       />
 
       <div className="flex flex-1 overflow-hidden relative">
-        <ErdCanvas onSelectTable={setSelectedTable} />
+        <ErdCanvas
+          onSelectTable={setSelectedTable}
+          tableFocuses={tableFocuses}
+          focusTable={focusTable}
+        />
 
         {/* Empty state overlay */}
         {present.tables.length === 0 && (

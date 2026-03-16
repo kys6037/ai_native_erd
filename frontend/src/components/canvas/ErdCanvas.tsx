@@ -19,19 +19,22 @@ import '@xyflow/react/dist/style.css'
 import TableNode, { type TableNodeType } from './TableNode'
 import useErdStore from '../../stores/erdStore'
 import type { ErdTable, ErdRelationship } from '../../types/erd'
+import type { CollabUser } from '../../hooks/useCollaboration'
 
 const nodeTypes = { tableNode: TableNode }
 
 interface Props {
   onSelectTable: (table: ErdTable | null) => void
+  tableFocuses: Record<string, CollabUser[]>
+  focusTable: (tableId: string | null) => void
 }
 
-function erdToNodes(tables: ErdTable[]): Node[] {
+function erdToNodes(tables: ErdTable[], tableFocuses: Record<string, CollabUser[]>): Node[] {
   return tables.map((t) => ({
     id: t.id,
     type: 'tableNode',
     position: { x: t.x, y: t.y },
-    data: { ...t } as TableNodeType['data'],
+    data: { ...t, _focusedBy: tableFocuses[t.id] ?? [] } as TableNodeType['data'],
   }))
 }
 
@@ -49,16 +52,16 @@ function erdToEdges(relationships: ErdRelationship[]): Edge[] {
   }))
 }
 
-export default function ErdCanvas({ onSelectTable }: Props) {
+export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: Props) {
   const { present, moveTable, addRelationship, removeRelationship } = useErdStore()
 
-  const [nodes, setNodes] = useState<Node[]>(() => erdToNodes(present.tables))
+  const [nodes, setNodes] = useState<Node[]>(() => erdToNodes(present.tables, tableFocuses))
   const [edges, setEdges] = useState<Edge[]>(() => erdToEdges(present.relationships))
 
   useEffect(() => {
-    setNodes(erdToNodes(present.tables))
+    setNodes(erdToNodes(present.tables, tableFocuses))
     setEdges(erdToEdges(present.relationships))
-  }, [present])
+  }, [present, tableFocuses])
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -79,21 +82,15 @@ export default function ErdCanvas({ onSelectTable }: Props) {
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      // handle format: tableId__columnName__source|target
       const fromParts = connection.sourceHandle?.split('__') ?? []
       const toParts = connection.targetHandle?.split('__') ?? []
       if (fromParts.length < 2 || toParts.length < 2) return
 
-      const sourceTableId = fromParts[0]
-      const sourceColumnName = fromParts[1]
-      const targetTableId = toParts[0]
-      const targetColumnName = toParts[1]
-
       addRelationship({
-        sourceTableId,
-        sourceColumnName,
-        targetTableId,
-        targetColumnName,
+        sourceTableId: fromParts[0],
+        sourceColumnName: fromParts[1],
+        targetTableId: toParts[0],
+        targetColumnName: toParts[1],
         type: 'one-to-many',
       })
       setEdges((eds) => addEdge(connection, eds))
@@ -112,13 +109,15 @@ export default function ErdCanvas({ onSelectTable }: Props) {
     (_event, node) => {
       const table = present.tables.find((t) => t.id === node.id) ?? null
       onSelectTable(table)
+      focusTable(node.id)
     },
-    [present.tables, onSelectTable]
+    [present.tables, onSelectTable, focusTable]
   )
 
   const onPaneClick = useCallback(() => {
     onSelectTable(null)
-  }, [onSelectTable])
+    focusTable(null)
+  }, [onSelectTable, focusTable])
 
   return (
     <div className="flex-1 h-full">

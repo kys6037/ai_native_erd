@@ -103,10 +103,19 @@ object CollaborationHandler {
                     "erd_sync" -> {
                         if (!session.authenticated) return@onMessage
                         val projectId = session.projectId ?: return@onMessage
-                        // Store latest ERD state and broadcast to room
                         val dataNode = node["data"] ?: return@onMessage
                         erdState[projectId] = wsMapper.writeValueAsString(dataNode)
                         broadcastToRoom(projectId, session, message)
+                    }
+                    "table_focus" -> {
+                        if (!session.authenticated) return@onMessage
+                        val projectId = session.projectId ?: return@onMessage
+                        val userId = session.userId ?: return@onMessage
+                        val userName = session.userName ?: "User"
+                        val tableId = node["tableId"]?.let { if (it.isNull) null else it.asText() }
+                        broadcastToRoom(projectId, session, wsMapper.writeValueAsString(
+                            mapOf("type" to "table_focus", "tableId" to tableId, "userId" to userId, "userName" to userName)
+                        ))
                     }
                     "cursor" -> {
                         if (!session.authenticated) return@onMessage
