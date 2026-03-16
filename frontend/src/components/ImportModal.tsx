@@ -1,10 +1,214 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { parseDdl } from '../api/ddlApi'
-import type { ErdData } from '../types/erd'
+import { listConnections, createConnection, deleteConnection, testConnection, importFromConnection } from '../api/connectionApi'
+import type { DbConnection, ErdData } from '../types/erd'
 
 interface Props {
   onClose: () => void
   onImport: (data: ErdData, mode: 'replace' | 'merge') => void
+}
+
+const DB_TYPES = ['mysql', 'postgresql', 'mssql']
+const DEFAULT_PORTS: Record<string, number> = { mysql: 3306, postgresql: 5432, mssql: 1433 }
+
+function DbConnectionTab({ onParsed }: { onParsed: (data: ErdData) => void }) {
+  const [connections, setConnections] = useState<DbConnection[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState<Omit<DbConnection, 'id'>>({
+    name: '', type: 'mysql', host: 'localhost', port: 3306,
+    database: '', username: '', password: '', ssl: false,
+  })
+  const [saving, setSaving] = useState(false)
+  const [testing, setTesting] = useState<number | null>(null)
+  const [testResult, setTestResult] = useState<{ id: number; success: boolean; message: string } | null>(null)
+  const [importing, setImporting] = useState<number | null>(null)
+  const [importError, setImportError] = useState('')
+
+  useEffect(() => {
+    listConnections().then(setConnections).finally(() => setLoading(false))
+  }, [])
+
+  const handleSave = async () => {
+    if (!form.name.trim() || !form.type) return
+    setSaving(true)
+    try {
+      const conn = await createConnection(form)
+      setConnections((prev) => [conn, ...prev])
+      setShowForm(false)
+      setForm({ name: '', type: 'mysql', host: 'localhost', port: 3306, database: '', username: '', password: '', ssl: false })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async (id: number) => {
+    await deleteConnection(id)
+    setConnections((prev) => prev.filter((c) => c.id !== id))
+  }
+
+  const handleTest = async (id: number) => {
+    setTesting(id)
+    setTestResult(null)
+    try {
+      const result = await testConnection(id)
+      setTestResult({ id, ...result })
+    } catch {
+      setTestResult({ id, success: false, message: 'Request failed' })
+    } finally {
+      setTesting(null)
+    }
+  }
+
+  const handleImport = async (id: number) => {
+    setImporting(id)
+    setImportError('')
+    try {
+      const data = await importFromConnection(id)
+      onParsed(data)
+    } catch (e: unknown) {
+      setImportError(e instanceof Error ? e.message : 'Import failed')
+    } finally {
+      setImporting(null)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Connections list */}
+      {loading ? (
+        <p className="text-sm text-gray-400">Loading…</p>
+      ) : connections.length === 0 && !showForm ? (
+        <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
+          저장된 연결이 없습니다.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {connections.map((conn) => (
+            <div key={conn.id} className="flex items-center gap-2 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{conn.name}</p>
+                <p className="text-xs text-gray-400">{conn.type} · {conn.host}:{conn.port} / {conn.database}</p>
+              </div>
+              {testResult != null && testResult.id === conn.id && (
+                <span className={`text-xs px-1.5 py-0.5 rounded ${testResult.success ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'}`}>
+                  {testResult.success ? '✓ OK' : '✗ Fail'}
+                </span>
+              )}
+              <button
+                onClick={() => handleTest(conn.id!)}
+                disabled={testing === conn.id}
+                className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+              >
+                {testing === conn.id ? '…' : 'Test'}
+              </button>
+              <button
+                onClick={() => handleImport(conn.id!)}
+                disabled={importing === conn.id}
+                className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                {importing === conn.id ? '…' : 'Import'}
+              </button>
+              <button
+                onClick={() => handleDelete(conn.id!)}
+                className="text-gray-400 hover:text-red-500 text-sm"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {importError && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md px-3 py-2 text-xs text-red-700 dark:text-red-300">
+          {importError}
+        </div>
+      )}
+
+      {/* Add connection form */}
+      {showForm ? (
+        <div className="border border-gray-200 dark:border-gray-600 rounded-md p-3 space-y-2">
+          <p className="text-xs font-medium text-gray-600 dark:text-gray-300">새 연결 추가</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2">
+              <input
+                placeholder="이름"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                className="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <select
+              value={form.type}
+              onChange={(e) => setForm((f) => ({ ...f, type: e.target.value, port: DEFAULT_PORTS[e.target.value] ?? f.port }))}
+              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              {DB_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <input
+              type="number"
+              placeholder="Port"
+              value={form.port ?? ''}
+              onChange={(e) => setForm((f) => ({ ...f, port: e.target.value ? parseInt(e.target.value) : null }))}
+              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            <input
+              placeholder="Host"
+              value={form.host ?? ''}
+              onChange={(e) => setForm((f) => ({ ...f, host: e.target.value }))}
+              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            <input
+              placeholder="Database"
+              value={form.database ?? ''}
+              onChange={(e) => setForm((f) => ({ ...f, database: e.target.value }))}
+              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            <input
+              placeholder="Username"
+              value={form.username ?? ''}
+              onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={form.password ?? ''}
+              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 col-span-2">
+              <input type="checkbox" checked={form.ssl} onChange={(e) => setForm((f) => ({ ...f, ssl: e.target.checked }))} />
+              SSL
+            </label>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={handleSave}
+              disabled={saving || !form.name.trim()}
+              className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              {saving ? '저장 중…' : '저장'}
+            </button>
+            <button
+              onClick={() => setShowForm(false)}
+              className="px-3 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowForm(true)}
+          className="w-full py-2 text-xs text-blue-600 dark:text-blue-400 border border-dashed border-blue-300 dark:border-blue-700 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20"
+        >
+          + 새 연결 추가
+        </button>
+      )}
+    </div>
+  )
 }
 
 const DIALECTS = ['mysql', 'postgresql', 'oracle', 'mssql']
@@ -157,9 +361,7 @@ export default function ImportModal({ onClose, onImport }: Props) {
 
           {/* Tab: DB Connection */}
           {activeTab === 'db' && (
-            <div className="py-8 text-center text-gray-400 dark:text-gray-500">
-              <p className="text-sm">DB connection import coming soon</p>
-            </div>
+            <DbConnectionTab onParsed={(data) => { setParsed(data); setWarnings([]) }} />
           )}
 
           {/* Error */}

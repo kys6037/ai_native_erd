@@ -35,6 +35,7 @@ interface ErdState {
   autoLayout: () => void
   loadFromVersion: (erdData: ErdData, dirty?: boolean) => void
   updateTableIndexes: (tableId: string, indexes: IndexMetadata[]) => void
+  updateTableColor: (tableId: string, color: string) => void
 }
 
 function emptyErd(): ErdData {
@@ -246,6 +247,19 @@ const useErdStore = create<ErdState>((set, get) => ({
       present: {
         ...present,
         tables: present.tables.map((t) => (t.id === tableId ? { ...t, indexes } : t)),
+      },
+      future: [],
+      isDirty: true,
+    })
+  },
+
+  updateTableColor: (tableId, color) => {
+    const { present, past } = get()
+    set({
+      past: pushHistory(past, present),
+      present: {
+        ...present,
+        tables: present.tables.map((t) => (t.id === tableId ? { ...t, color } : t)),
       },
       future: [],
       isDirty: true,

@@ -10,7 +10,7 @@ interface Props {
 const SQL_TYPES = ['INT', 'BIGINT', 'VARCHAR', 'TEXT', 'BOOLEAN', 'DECIMAL', 'TIMESTAMP', 'DATE', 'UUID', 'JSON', 'FLOAT', 'DOUBLE']
 
 export default function Sidebar({ table, onClose }: Props) {
-  const { updateTableName, updateColumn, addColumn, removeColumn, removeTable, present } = useErdStore()
+  const { updateTableName, updateColumn, addColumn, removeColumn, removeTable, updateTableColor, present } = useErdStore()
 
   if (!table) {
     return (
@@ -44,6 +44,26 @@ export default function Sidebar({ table, onClose }: Props) {
             onChange={(e) => updateTableName(table.id, e.target.value)}
             className="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+
+        {/* Table Color */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Table Color</label>
+          <div className="flex flex-wrap gap-2">
+            {['#6366f1','#3b82f6','#14b8a6','#22c55e','#eab308','#f97316','#ef4444','#ec4899','#8b5cf6','#6b7280'].map((c) => (
+              <button
+                key={c}
+                onClick={() => updateTableColor(table.id, c)}
+                style={{ backgroundColor: c }}
+                className={`w-6 h-6 rounded-full transition-transform border-2 ${
+                  table.color === c
+                    ? 'border-gray-900 dark:border-white scale-110'
+                    : 'border-transparent hover:scale-110'
+                }`}
+                title={c}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Columns */}

@@ -25,6 +25,11 @@ dependencies {
     implementation("org.xerial:sqlite-jdbc:3.45.3.0")
     implementation("com.zaxxer:HikariCP:5.1.0")
 
+    // JDBC drivers for DB schema import
+    runtimeOnly("com.mysql:mysql-connector-j:8.3.0")
+    runtimeOnly("org.postgresql:postgresql:42.7.3")
+    runtimeOnly("com.microsoft.sqlserver:mssql-jdbc:12.4.2.jre11")
+
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")

@@ -4,6 +4,17 @@ import com.erd.config.Database
 import com.erd.model.DbConnectionRequest
 import com.erd.model.DbConnectionResponse
 
+data class ConnectionCredentials(
+    val id: Int,
+    val type: String,
+    val host: String?,
+    val port: Int?,
+    val database: String?,
+    val username: String?,
+    val password: String?,
+    val ssl: Boolean
+)
+
 class ConnectionRepository {
 
     fun findAll(userId: Int): List<DbConnectionResponse> {
@@ -124,6 +135,29 @@ class ConnectionRepository {
                 stmt.setInt(1, id)
                 stmt.setInt(2, userId)
                 return stmt.executeUpdate() > 0
+            }
+        }
+    }
+
+    fun findCredentials(id: Int, userId: Int): ConnectionCredentials? {
+        Database.getConnection().use { conn ->
+            conn.prepareStatement(
+                "SELECT id, type, host, port, database, username, password, ssl FROM db_connections WHERE id = ? AND user_id = ?"
+            ).use { stmt ->
+                stmt.setInt(1, id)
+                stmt.setInt(2, userId)
+                val rs = stmt.executeQuery()
+                if (!rs.next()) return null
+                return ConnectionCredentials(
+                    id = rs.getInt("id"),
+                    type = rs.getString("type"),
+                    host = rs.getString("host"),
+                    port = rs.getObject("port") as? Int,
+                    database = rs.getString("database"),
+                    username = rs.getString("username"),
+                    password = rs.getString("password"),
+                    ssl = rs.getInt("ssl") == 1
+                )
             }
         }
     }
