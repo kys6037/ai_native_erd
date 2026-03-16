@@ -24,7 +24,7 @@ data class WsSession(
 
 object CollaborationHandler {
     private val rooms = ConcurrentHashMap<Int, CopyOnWriteArraySet<WsSession>>()
-    private val yjsState = ConcurrentHashMap<Int, ByteArray>()
+    private val erdState = ConcurrentHashMap<Int, String>()  // latest ERD JSON per project
     private val sessions = ConcurrentHashMap<String, WsSession>()
 
     fun configure(ws: WsConfig, projectRepo: ProjectRepository, userRepo: UserRepository) {
@@ -80,16 +80,16 @@ object CollaborationHandler {
                         // Add to room
                         rooms.getOrPut(projectId) { CopyOnWriteArraySet() }.add(session)
 
-                        // Send auth_ok + current Yjs state
-                        val currentState = yjsState[projectId]
-                        if (currentState != null) {
+                        // Send auth_ok + current ERD state if available
+                        val currentErd = erdState[projectId]
+                        if (currentErd != null) {
+                            val node = wsMapper.readTree(currentErd)
                             ctx.send(wsMapper.writeValueAsString(
-                                mapOf("type" to "auth_ok", "hasState" to true)
+                                mapOf("type" to "auth_ok", "erdData" to node)
                             ))
-                            ctx.send(currentState)
                         } else {
                             ctx.send(wsMapper.writeValueAsString(
-                                mapOf("type" to "auth_ok", "hasState" to false)
+                                mapOf("type" to "auth_ok")
                             ))
                         }
 
@@ -100,10 +100,17 @@ object CollaborationHandler {
 
                         log.debug("WS auth ok: userId=$userId projectId=$projectId")
                     }
+                    "erd_sync" -> {
+                        if (!session.authenticated) return@onMessage
+                        val projectId = session.projectId ?: return@onMessage
+                        // Store latest ERD state and broadcast to room
+                        val dataNode = node["data"] ?: return@onMessage
+                        erdState[projectId] = wsMapper.writeValueAsString(dataNode)
+                        broadcastToRoom(projectId, session, message)
+                    }
                     "cursor" -> {
                         if (!session.authenticated) return@onMessage
                         val projectId = session.projectId ?: return@onMessage
-                        // Broadcast cursor position to room (excluding sender)
                         broadcastToRoom(projectId, session, message)
                     }
                     else -> {
@@ -112,29 +119,6 @@ object CollaborationHandler {
                 }
             } catch (e: Exception) {
                 log.error("WS message handling error", e)
-            }
-        }
-
-        ws.onBinaryMessage { ctx ->
-            val sessionId = ctx.sessionId()
-            val session = sessions[sessionId] ?: return@onBinaryMessage
-            if (!session.authenticated) return@onBinaryMessage
-            val projectId = session.projectId ?: return@onBinaryMessage
-
-            val data = ctx.data()
-            // Update Yjs state (merge — store latest)
-            yjsState[projectId] = data
-
-            // Broadcast binary to room (excluding sender)
-            val room = rooms[projectId] ?: return@onBinaryMessage
-            for (other in room) {
-                if (other.ctx.sessionId() != sessionId) {
-                    try {
-                        other.ctx.send(data)
-                    } catch (e: Exception) {
-                        log.debug("Failed to send binary to session ${other.ctx.sessionId()}: ${e.message}")
-                    }
-                }
             }
         }
 
