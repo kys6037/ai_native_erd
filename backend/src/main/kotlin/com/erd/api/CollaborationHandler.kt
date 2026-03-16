@@ -63,9 +63,9 @@ object CollaborationHandler {
                             return@onMessage
                         }
 
-                        // Check project ownership
+                        // Check project access (owner or member)
                         val project = projectRepo.findById(projectId)
-                        if (project == null || project.userId != userId) {
+                        if (project == null || (project.userId != userId && !projectRepo.isMember(projectId, userId))) {
                             ctx.send(wsMapper.writeValueAsString(mapOf("type" to "error", "message" to "access denied")))
                             return@onMessage
                         }
