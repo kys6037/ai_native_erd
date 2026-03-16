@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -12,6 +12,7 @@ import {
   type OnNodeDrag,
   type OnNodesChange,
   type OnEdgesChange,
+  type ReactFlowInstance,
   applyNodeChanges,
   applyEdgeChanges,
 } from '@xyflow/react'
@@ -58,10 +59,49 @@ export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: P
   const [nodes, setNodes] = useState<Node[]>(() => erdToNodes(present.tables, tableFocuses))
   const [edges, setEdges] = useState<Edge[]>(() => erdToEdges(present.relationships))
 
+  const rfRef = useRef<ReactFlowInstance | null>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     setNodes(erdToNodes(present.tables, tableFocuses))
     setEdges(erdToEdges(present.relationships))
   }, [present, tableFocuses])
+
+  // Custom wheel handler: scroll=pan vertical, shift+scroll=pan horizontal, ctrl+scroll=zoom
+  useEffect(() => {
+    const el = wrapperRef.current
+    if (!el) return
+
+    const handleWheel = (e: WheelEvent) => {
+      const rf = rfRef.current
+      if (!rf) return
+      e.preventDefault()
+
+      const { x, y, zoom } = rf.getViewport()
+
+      if (e.ctrlKey) {
+        // Zoom towards cursor position
+        const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1
+        const newZoom = Math.min(Math.max(zoom * factor, 0.1), 4)
+        const rect = el.getBoundingClientRect()
+        const cx = e.clientX - rect.left
+        const cy = e.clientY - rect.top
+        // Keep the point under the cursor fixed in flow space
+        const px = (cx - x) / zoom
+        const py = (cy - y) / zoom
+        rf.setViewport({ x: cx - px * newZoom, y: cy - py * newZoom, zoom: newZoom })
+      } else if (e.shiftKey) {
+        // Horizontal pan
+        rf.setViewport({ x: x - e.deltaY, y, zoom })
+      } else {
+        // Vertical pan
+        rf.setViewport({ x, y: y - e.deltaY, zoom })
+      }
+    }
+
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [])
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -120,7 +160,7 @@ export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: P
   }, [onSelectTable, focusTable])
 
   return (
-    <div className="flex-1 h-full">
+    <div ref={wrapperRef} className="flex-1 h-full">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -131,12 +171,20 @@ export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: P
         onEdgeClick={onEdgeClick}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
+        onInit={(instance) => { rfRef.current = instance }}
         nodeTypes={nodeTypes}
+        zoomOnScroll={false}
+        panOnScroll={false}
         fitView
       >
         <Background />
         <Controls />
-        <MiniMap />
+        <MiniMap
+          pannable
+          zoomable
+          nodeStrokeWidth={2}
+          style={{ border: '1px solid #e5e7eb' }}
+        />
       </ReactFlow>
     </div>
   )
