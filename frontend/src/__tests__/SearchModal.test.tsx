@@ -9,21 +9,21 @@ const tables: ErdTable[] = [
     id: 't1',
     name: 'users',
     x: 0, y: 0,
+    color: '#6366f1',
     columns: [
-      { id: 'c1', name: 'id', type: 'INT', primaryKey: true, notNull: true, unique: false, defaultValue: '', comment: '' },
-      { id: 'c2', name: 'email', type: 'VARCHAR(255)', primaryKey: false, notNull: true, unique: true, defaultValue: '', comment: '' },
+      { name: 'id', type: 'INT', primaryKey: true, nullable: false, unique: false, autoIncrement: true },
+      { name: 'email', type: 'VARCHAR(255)', primaryKey: false, nullable: false, unique: true, autoIncrement: false },
     ],
-    comment: '',
     indexes: [],
   },
   {
     id: 't2',
     name: 'orders',
     x: 0, y: 0,
+    color: '#6366f1',
     columns: [
-      { id: 'c3', name: 'user_id', type: 'INT', primaryKey: false, notNull: true, unique: false, defaultValue: '', comment: '' },
+      { name: 'user_id', type: 'INT', primaryKey: false, nullable: false, unique: false, autoIncrement: false },
     ],
-    comment: '',
     indexes: [],
   },
 ]

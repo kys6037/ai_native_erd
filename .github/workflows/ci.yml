@@ -26,7 +26,9 @@ jobs:
           restore-keys: gradle-
       - name: Run backend tests
         working-directory: backend
-        run: ./gradlew test --no-daemon
+        run: |
+          chmod +x gradlew
+          ./gradlew test --no-daemon
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4
