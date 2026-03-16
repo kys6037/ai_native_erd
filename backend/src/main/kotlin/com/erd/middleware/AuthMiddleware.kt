@@ -10,6 +10,9 @@ object AuthMiddleware {
     private val log = LoggerFactory.getLogger(AuthMiddleware::class.java)
 
     fun handle(ctx: Context) {
+        // Skip CORS preflight
+        if (ctx.method().name == "OPTIONS") return
+
         val path = ctx.path()
         // Skip auth endpoints
         if (path.startsWith("/api/auth/")) return
