@@ -31,3 +31,5 @@ logs/
 *.db-shm
 *.db-wal
 *.sqlite
+
+.vercel
