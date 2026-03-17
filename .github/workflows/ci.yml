@@ -16,19 +16,19 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Cache Gradle
+      - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
           path: |
-            ~/.gradle/caches
+            ~/.gradle/caches/modules-2
             ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('backend/**/*.gradle*', 'backend/**/gradle-wrapper.properties') }}
-          restore-keys: gradle-
+          key: gradle-deps-${{ hashFiles('backend/**/*.gradle*', 'backend/**/gradle-wrapper.properties') }}
+          restore-keys: gradle-deps-
       - name: Run backend tests
         working-directory: backend
         run: |
           chmod +x gradlew
-          ./gradlew test --no-daemon
+          ./gradlew clean test --no-daemon
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4
