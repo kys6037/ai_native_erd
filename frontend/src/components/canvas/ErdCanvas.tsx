@@ -227,6 +227,7 @@ export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: P
         onInit={(instance) => { rfRef.current = instance }}
         nodeTypes={nodeTypes}
         zoomOnScroll={false}
+        zoomOnDoubleClick={false}
         panOnScroll={false}
         fitView
       >

@@ -13,6 +13,7 @@ import DictionaryModal from '../components/DictionaryModal'
 import SearchModal from '../components/SearchModal'
 import InviteModal from '../components/InviteModal'
 import { useCollaboration } from '../hooks/useCollaboration'
+import ThemeToggle from '../components/ThemeToggle'
 import type { ErdData, ErdTable } from '../types/erd'
 
 export default function ProjectPage() {
@@ -198,6 +199,7 @@ export default function ProjectPage() {
           </svg>
           Invite
         </button>
+        <ThemeToggle />
       </div>
 
       <Toolbar
