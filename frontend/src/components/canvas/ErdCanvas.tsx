@@ -176,25 +176,28 @@ export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: P
     [removeRelationship]
   )
 
-  // Single click: highlight only, no sidebar
+  // Single click: highlight + show properties if single selection
   const onNodeClick: NodeMouseHandler = useCallback(
     (event, node) => {
       const multi = event.ctrlKey || event.metaKey
       selectTable(node.id, multi)
       focusTable(node.id)
+      if (!multi) {
+        const table = present.tables.find((t) => t.id === node.id) ?? null
+        onSelectTable(table)
+      } else {
+        onSelectTable(null)
+      }
     },
-    [selectTable, focusTable]
+    [selectTable, focusTable, present.tables, onSelectTable]
   )
 
-  // Double click: open sidebar for editing
+  // Double click: activate table name editing (sidebar already open from single click)
   const onNodeDoubleClick: NodeMouseHandler = useCallback(
     (_event, node) => {
-      const table = present.tables.find((t) => t.id === node.id) ?? null
       setEditingTable(node.id)
-      onSelectTable(table)
-      focusTable(node.id)
     },
-    [present.tables, setEditingTable, onSelectTable, focusTable]
+    [setEditingTable]
   )
 
   const onPaneClick = useCallback(() => {
