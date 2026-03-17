@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -19,6 +19,8 @@ import {
 import '@xyflow/react/dist/style.css'
 import TableNode, { type TableNodeType } from './TableNode'
 import useErdStore from '../../stores/erdStore'
+import useThemeStore from '../../stores/themeStore'
+import useSelectionStore from '../../stores/selectionStore'
 import type { ErdTable, ErdRelationship } from '../../types/erd'
 import type { CollabUser } from '../../hooks/useCollaboration'
 
@@ -30,11 +32,16 @@ interface Props {
   focusTable: (tableId: string | null) => void
 }
 
-function erdToNodes(tables: ErdTable[], tableFocuses: Record<string, CollabUser[]>): Node[] {
+function erdToNodes(
+  tables: ErdTable[],
+  tableFocuses: Record<string, CollabUser[]>,
+  selectedIds: Set<string>
+): Node[] {
   return tables.map((t) => ({
     id: t.id,
     type: 'tableNode',
     position: { x: t.x, y: t.y },
+    draggable: selectedIds.has(t.id),
     data: { ...t, _focusedBy: tableFocuses[t.id] ?? [] } as TableNodeType['data'],
   }))
 }
@@ -54,20 +61,48 @@ function erdToEdges(relationships: ErdRelationship[]): Edge[] {
 }
 
 export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: Props) {
-  const { present, moveTable, addRelationship, removeRelationship } = useErdStore()
+  const { present, moveTable, addRelationship, removeRelationship, removeItems } = useErdStore()
+  const theme = useThemeStore((s) => s.theme)
+  const { selectTable, setEditingTable, clearAll } = useSelectionStore()
+  const selectedTableIds = useSelectionStore((s) => s.tableIds)
+  const selectedTableIdSet = useMemo(() => new Set(selectedTableIds), [selectedTableIds])
 
-  const [nodes, setNodes] = useState<Node[]>(() => erdToNodes(present.tables, tableFocuses))
+  const [nodes, setNodes] = useState<Node[]>(() =>
+    erdToNodes(present.tables, tableFocuses, selectedTableIdSet)
+  )
   const [edges, setEdges] = useState<Edge[]>(() => erdToEdges(present.relationships))
 
   const rfRef = useRef<ReactFlowInstance | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setNodes(erdToNodes(present.tables, tableFocuses))
+    setNodes(erdToNodes(present.tables, tableFocuses, selectedTableIdSet))
     setEdges(erdToEdges(present.relationships))
-  }, [present, tableFocuses])
+  }, [present, tableFocuses, selectedTableIdSet])
 
-  // Custom wheel handler: scroll=pan vertical, shift+scroll=pan horizontal, ctrl+scroll=zoom
+  // Delete key: remove selected tables and columns in one history step
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Delete') return
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+
+      const { tableIds, columnKeys } = useSelectionStore.getState()
+      if (tableIds.length === 0 && columnKeys.length === 0) return
+
+      const colItems = columnKeys.map((key) => {
+        const [tableId, colIdxStr] = key.split(':')
+        return { tableId, colIndex: parseInt(colIdxStr) }
+      })
+      removeItems(tableIds, colItems)
+      clearAll()
+      onSelectTable(null)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [removeItems, clearAll, onSelectTable])
+
+  // Custom wheel: scroll=pan vertical, shift+scroll=horizontal, ctrl+scroll=zoom
   useEffect(() => {
     const el = wrapperRef.current
     if (!el) return
@@ -80,21 +115,17 @@ export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: P
       const { x, y, zoom } = rf.getViewport()
 
       if (e.ctrlKey) {
-        // Zoom towards cursor position
         const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1
         const newZoom = Math.min(Math.max(zoom * factor, 0.1), 4)
         const rect = el.getBoundingClientRect()
         const cx = e.clientX - rect.left
         const cy = e.clientY - rect.top
-        // Keep the point under the cursor fixed in flow space
         const px = (cx - x) / zoom
         const py = (cy - y) / zoom
         rf.setViewport({ x: cx - px * newZoom, y: cy - py * newZoom, zoom: newZoom })
       } else if (e.shiftKey) {
-        // Horizontal pan
         rf.setViewport({ x: x - e.deltaY, y, zoom })
       } else {
-        // Vertical pan
         rf.setViewport({ x, y: y - e.deltaY, zoom })
       }
     }
@@ -145,19 +176,32 @@ export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: P
     [removeRelationship]
   )
 
+  // Single click: highlight only, no sidebar
   const onNodeClick: NodeMouseHandler = useCallback(
+    (event, node) => {
+      const multi = event.ctrlKey || event.metaKey
+      selectTable(node.id, multi)
+      focusTable(node.id)
+    },
+    [selectTable, focusTable]
+  )
+
+  // Double click: open sidebar for editing
+  const onNodeDoubleClick: NodeMouseHandler = useCallback(
     (_event, node) => {
       const table = present.tables.find((t) => t.id === node.id) ?? null
+      setEditingTable(node.id)
       onSelectTable(table)
       focusTable(node.id)
     },
-    [present.tables, onSelectTable, focusTable]
+    [present.tables, setEditingTable, onSelectTable, focusTable]
   )
 
   const onPaneClick = useCallback(() => {
+    clearAll()
     onSelectTable(null)
     focusTable(null)
-  }, [onSelectTable, focusTable])
+  }, [clearAll, onSelectTable, focusTable])
 
   return (
     <div ref={wrapperRef} className="flex-1 h-full">
@@ -170,6 +214,7 @@ export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: P
         onConnect={onConnect}
         onEdgeClick={onEdgeClick}
         onNodeClick={onNodeClick}
+        onNodeDoubleClick={onNodeDoubleClick}
         onPaneClick={onPaneClick}
         onInit={(instance) => { rfRef.current = instance }}
         nodeTypes={nodeTypes}
@@ -185,10 +230,10 @@ export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: P
           nodeColor={(node) => (node.data as { color?: string }).color || '#6366f1'}
           nodeStrokeColor="transparent"
           nodeStrokeWidth={0}
-          maskColor="rgba(0,0,0,0.08)"
+          maskColor={theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.15)'}
           style={{
-            background: '#f8fafc',
-            border: '1px solid #e2e8f0',
+            background: theme === 'dark' ? '#1e2330' : '#f1f5f9',
+            border: `1px solid ${theme === 'dark' ? '#30363d' : '#e2e8f0'}`,
             borderRadius: 8,
             width: 200,
             height: 140,

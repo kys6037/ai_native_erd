@@ -101,7 +101,7 @@ export default function ProjectPage() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !isInput) {
         e.preventDefault()
         undo()
-      } else if ((e.ctrlKey || e.metaKey) && e.key === 'y' && !isInput) {
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'r') && !isInput) {
         e.preventDefault()
         redo()
       } else if ((e.ctrlKey || e.metaKey) && e.key === 's') {

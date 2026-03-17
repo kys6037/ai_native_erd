@@ -31,6 +31,7 @@ interface ErdState {
 
   addRelationship: (rel: Omit<ErdRelationship, 'id'>) => void
   removeRelationship: (relId: string) => void
+  removeItems: (tableIds: string[], colItems: { tableId: string; colIndex: number }[]) => void
 
   autoLayout: () => void
   loadFromVersion: (erdData: ErdData, dirty?: boolean) => void
@@ -231,6 +232,37 @@ const useErdStore = create<ErdState>((set, get) => ({
         ...present,
         relationships: present.relationships.filter((r) => r.id !== relId),
       },
+      future: [],
+      isDirty: true,
+    })
+  },
+
+  removeItems: (tableIds, colItems) => {
+    const { present, past } = get()
+    const tableIdSet = new Set(tableIds)
+
+    // Group column indices by tableId
+    const colsByTable: Record<string, Set<number>> = {}
+    for (const { tableId, colIndex } of colItems) {
+      if (!colsByTable[tableId]) colsByTable[tableId] = new Set()
+      colsByTable[tableId].add(colIndex)
+    }
+
+    const tables = present.tables
+      .filter((t) => !tableIdSet.has(t.id))
+      .map((t) => {
+        const indicesToRemove = colsByTable[t.id]
+        if (!indicesToRemove) return t
+        return { ...t, columns: t.columns.filter((_, i) => !indicesToRemove.has(i)) }
+      })
+
+    const relationships = present.relationships.filter(
+      (r) => !tableIdSet.has(r.sourceTableId) && !tableIdSet.has(r.targetTableId)
+    )
+
+    set({
+      past: pushHistory(past, present),
+      present: { tables, relationships },
       future: [],
       isDirty: true,
     })

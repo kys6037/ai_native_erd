@@ -4,6 +4,7 @@ import type { Node, NodeProps } from '@xyflow/react'
 import type { ErdTable, ColumnMetadata } from '../../types/erd'
 import type { CollabUser } from '../../hooks/useCollaboration'
 import useErdStore from '../../stores/erdStore'
+import useSelectionStore from '../../stores/selectionStore'
 
 export type TableNodeType = Node<
   ErdTable & { _focusedBy?: CollabUser[] } & Record<string, unknown>,
@@ -23,10 +24,16 @@ interface ColumnRowProps {
 
 function ColumnRow({ tableId, colIndex, col }: ColumnRowProps) {
   const updateColumn = useErdStore((s) => s.updateColumn)
+  const { selectColumn, setEditingColumn } = useSelectionStore()
+  const colKey = `${tableId}:${colIndex}`
+  const isSelected = useSelectionStore((s) => s.columnKeys.includes(colKey))
+  const isEditing = useSelectionStore((s) => s.editingColumnKey === colKey)
+
   const [name, setName] = useState(col.name)
   const [comment, setComment] = useState(col.comment ?? '')
   const [type, setType] = useState(col.type)
   const focusedRef = useRef(false)
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   // Sync external changes when not actively editing
   useEffect(() => {
@@ -37,8 +44,16 @@ function ColumnRow({ tableId, colIndex, col }: ColumnRowProps) {
     }
   }, [col.name, col.comment, col.type])
 
+  // Auto-focus first input when entering edit mode
+  useEffect(() => {
+    if (isEditing) {
+      nameInputRef.current?.focus()
+    }
+  }, [isEditing])
+
   const commit = () => {
     focusedRef.current = false
+    setEditingColumn(null)
     updateColumn(tableId, colIndex, {
       ...col,
       name: name.trim() || col.name,
@@ -47,10 +62,30 @@ function ColumnRow({ tableId, colIndex, col }: ColumnRowProps) {
     })
   }
 
-  const stop = (e: React.MouseEvent | React.KeyboardEvent) => e.stopPropagation()
+  const stopProp = (e: React.MouseEvent | React.KeyboardEvent) => e.stopPropagation()
+
+  const handleRowClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (isEditing) return
+    selectColumn(colKey, e.ctrlKey || e.metaKey)
+  }
+
+  const handleRowDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    selectColumn(colKey, false)
+    setEditingColumn(colKey)
+  }
 
   return (
-    <div className="relative grid grid-cols-[1fr_1fr_72px_28px] items-center border-b border-gray-100 dark:border-gray-700 last:border-0 group">
+    <div
+      className={`relative grid grid-cols-[1fr_1fr_72px_28px] items-center border-b border-gray-100 dark:border-gray-700 last:border-0 group cursor-pointer ${
+        isSelected && !isEditing
+          ? 'bg-indigo-50 dark:bg-indigo-900/20'
+          : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'
+      }`}
+      onClick={handleRowClick}
+      onDoubleClick={handleRowDoubleClick}
+    >
       <Handle
         type="source"
         position={Position.Right}
@@ -75,13 +110,16 @@ function ColumnRow({ tableId, colIndex, col }: ColumnRowProps) {
           <span className="text-blue-400 font-bold text-[9px] shrink-0">FK</span>
         )}
         <input
+          ref={nameInputRef}
           value={name}
           onChange={(e) => setName(e.target.value)}
           onFocus={() => { focusedRef.current = true }}
           onBlur={commit}
-          onMouseDown={stop}
-          onKeyDown={stop}
-          className="w-full text-xs text-gray-800 dark:text-gray-200 bg-transparent border-b border-transparent hover:border-gray-300 dark:hover:border-gray-500 focus:border-blue-400 outline-none min-w-0 truncate"
+          onMouseDown={stopProp}
+          onKeyDown={stopProp}
+          readOnly={!isEditing}
+          tabIndex={isEditing ? 0 : -1}
+          className="w-full text-xs text-gray-800 dark:text-gray-200 bg-transparent border-b border-transparent hover:border-gray-300 dark:hover:border-gray-500 focus:border-blue-400 outline-none min-w-0 truncate read-only:cursor-default"
         />
       </div>
 
@@ -91,10 +129,12 @@ function ColumnRow({ tableId, colIndex, col }: ColumnRowProps) {
         onChange={(e) => setComment(e.target.value)}
         onFocus={() => { focusedRef.current = true }}
         onBlur={commit}
-        onMouseDown={stop}
-        onKeyDown={stop}
-        placeholder="설명..."
-        className="px-2 py-1 text-xs text-gray-400 dark:text-gray-500 bg-transparent border-b border-transparent hover:border-gray-300 dark:hover:border-gray-500 focus:border-blue-400 outline-none min-w-0 truncate placeholder:text-gray-300 dark:placeholder:text-gray-600"
+        onMouseDown={stopProp}
+        onKeyDown={stopProp}
+        placeholder={isEditing ? '설명...' : ''}
+        readOnly={!isEditing}
+        tabIndex={isEditing ? 0 : -1}
+        className="px-2 py-1 text-xs text-gray-400 dark:text-gray-500 bg-transparent border-b border-transparent hover:border-gray-300 dark:hover:border-gray-500 focus:border-blue-400 outline-none min-w-0 truncate placeholder:text-gray-300 dark:placeholder:text-gray-600 read-only:cursor-default"
       />
 
       {/* data type */}
@@ -103,9 +143,11 @@ function ColumnRow({ tableId, colIndex, col }: ColumnRowProps) {
         onChange={(e) => setType(e.target.value)}
         onFocus={() => { focusedRef.current = true }}
         onBlur={commit}
-        onMouseDown={stop}
-        onKeyDown={stop}
-        className="px-2 py-1 text-xs text-purple-600 dark:text-purple-400 bg-transparent border-b border-transparent hover:border-gray-300 dark:hover:border-gray-500 focus:border-blue-400 outline-none truncate"
+        onMouseDown={stopProp}
+        onKeyDown={stopProp}
+        readOnly={!isEditing}
+        tabIndex={isEditing ? 0 : -1}
+        className="px-2 py-1 text-xs text-purple-600 dark:text-purple-400 bg-transparent border-b border-transparent hover:border-gray-300 dark:hover:border-gray-500 focus:border-blue-400 outline-none truncate read-only:cursor-default"
       />
 
       {/* nullable */}
@@ -116,9 +158,10 @@ function ColumnRow({ tableId, colIndex, col }: ColumnRowProps) {
           onChange={(e) =>
             updateColumn(tableId, colIndex, { ...col, nullable: e.target.checked })
           }
-          onMouseDown={stop}
+          onMouseDown={stopProp}
+          disabled={!isEditing}
           title="Nullable"
-          className="cursor-pointer accent-blue-500"
+          className="cursor-pointer accent-blue-500 disabled:cursor-default disabled:opacity-60"
         />
       </div>
     </div>
@@ -129,19 +172,33 @@ function TableNode({ data }: NodeProps<TableNodeType>) {
   const table = data as ErdTable & { _focusedBy?: CollabUser[] }
   const focusedBy = table._focusedBy ?? []
   const updateTableName = useErdStore((s) => s.updateTableName)
+  const { setEditingTable } = useSelectionStore()
+  const isSelected = useSelectionStore((s) => s.tableIds.includes(table.id))
+  const isTableEditing = useSelectionStore((s) => s.editingTableId === table.id)
+
   const [tableName, setTableName] = useState(table.name)
   const tableNameFocusedRef = useRef(false)
+  const tableNameInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!tableNameFocusedRef.current) setTableName(table.name)
   }, [table.name])
 
-  const stop = (e: React.MouseEvent | React.KeyboardEvent) => e.stopPropagation()
+  // Auto-focus table name when editing activated
+  useEffect(() => {
+    if (isTableEditing) {
+      tableNameInputRef.current?.focus()
+    }
+  }, [isTableEditing])
 
-  const ringStyle =
-    focusedBy.length > 0
-      ? { outline: `2px solid ${userColor(focusedBy[0].userId)}`, outlineOffset: '2px' }
-      : {}
+  const stopProp = (e: React.MouseEvent | React.KeyboardEvent) => e.stopPropagation()
+
+  // Selection ring: indigo for selected, collab color for focused-by others
+  const ringStyle: React.CSSProperties = isSelected
+    ? { outline: '2px solid #6366f1', outlineOffset: '2px' }
+    : focusedBy.length > 0
+    ? { outline: `2px solid ${userColor(focusedBy[0].userId)}`, outlineOffset: '2px' }
+    : {}
 
   return (
     <div
@@ -154,19 +211,23 @@ function TableNode({ data }: NodeProps<TableNodeType>) {
         style={{ backgroundColor: table.color || '#6366f1' }}
       >
         <input
+          ref={tableNameInputRef}
           value={tableName}
           onChange={(e) => setTableName(e.target.value)}
           onFocus={() => { tableNameFocusedRef.current = true }}
           onBlur={() => {
             tableNameFocusedRef.current = false
+            setEditingTable(null)
             updateTableName(table.id, tableName.trim() || table.name)
           }}
-          onMouseDown={stop}
-          onKeyDown={stop}
-          className="flex-1 bg-transparent text-white font-semibold text-sm outline-none border-b border-transparent hover:border-white/50 focus:border-white min-w-0"
+          onMouseDown={stopProp}
+          onKeyDown={stopProp}
+          readOnly={!isTableEditing}
+          tabIndex={isTableEditing ? 0 : -1}
+          className="flex-1 bg-transparent text-white font-semibold text-sm outline-none border-b border-transparent hover:border-white/50 focus:border-white min-w-0 read-only:cursor-default"
         />
 
-        {/* Focus badges — fixed size, truncated */}
+        {/* Focus badges */}
         {focusedBy.length > 0 && (
           <div className="flex gap-1 shrink-0">
             {focusedBy.slice(0, 2).map((u) => (
