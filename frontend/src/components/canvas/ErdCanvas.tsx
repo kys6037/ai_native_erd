@@ -42,6 +42,7 @@ function erdToNodes(
     type: 'tableNode',
     position: { x: t.x, y: t.y },
     draggable: selectedIds.has(t.id),
+    selected: selectedIds.has(t.id),
     data: { ...t, _focusedBy: tableFocuses[t.id] ?? [] } as TableNodeType['data'],
   }))
 }
@@ -135,7 +136,11 @@ export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: P
   }, [])
 
   const onNodesChange: OnNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    (changes) => {
+      // Filter out ReactFlow's internal select changes — selection is managed by selectionStore
+      const filtered = changes.filter((c) => c.type !== 'select')
+      setNodes((nds) => applyNodeChanges(filtered, nds))
+    },
     []
   )
 
@@ -145,8 +150,8 @@ export default function ErdCanvas({ onSelectTable, tableFocuses, focusTable }: P
   )
 
   const onNodeDragStop: OnNodeDrag = useCallback(
-    (_event, node) => {
-      moveTable(node.id, node.position.x, node.position.y)
+    (_event, _node, draggedNodes) => {
+      draggedNodes.forEach((n) => moveTable(n.id, n.position.x, n.position.y))
     },
     [moveTable]
   )
